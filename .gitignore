@@ -1,10 +1,1 @@
-A note on usage:
 
-Input is provided by a .txt file in the root directory. Each entry should be on it's own line.
-Internal records are provided in the `records/` folder, which are written to and read at each command execution.
-
-Column names:
-| Name | last checked | updated | link |
-
-Each supported site will have it's own wrapper
-More will be added as I need them
