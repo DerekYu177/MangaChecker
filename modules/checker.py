@@ -64,9 +64,13 @@ def check(args):
 
 def _display_latest_manga(latest_manga):
     """
+    latest_manga should be a DataFrame
+    | Manga | Chapter Title | Chapter Number | Chapter Link (alap) | Updated |
+
     reads the latest manga against the records
     and displays the changes accordingly
 
     Returns: None
     """
+
     return latest_manga
