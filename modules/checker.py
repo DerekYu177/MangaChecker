@@ -14,6 +14,7 @@ We will update the records to reflect this change
 
 import os
 import sys
+import datetime
 
 from .retriever import Retriever
 from .filereader import Updater
@@ -71,6 +72,7 @@ def check(args):
     # we compare the latest chapter to the records
     # and display if it is more recent
     dynamic_table = dtp(updated_manga, squish_column='title')
+    dynamic_table.config.banner = 'Lastest Manga for {}'.format(datetime.date.today())
     dynamic_table.write_to_screen()
 
     # we update the records

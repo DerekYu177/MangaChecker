@@ -4,11 +4,12 @@ Coordinates finding all of the mangas
 import itertools
 import pandas as pd
 
-from .mangasites import ReadMs
+from .mangasites import ReadMs, Manganelo
 
 SUPPORTED_SITES = {
     'Manga Stream': ReadMs,
     'ReadMS' : ReadMs,
+    'Manganelo': Manganelo,
 }
 
 def _retrieve(manga, site):

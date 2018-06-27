@@ -15,6 +15,9 @@ class BaseMangaSite:
     The base inheritable class of all Manga sites
     """
 
+    def __init__(self, manga):
+        self.manga = manga
+
     @staticmethod
     def __identify(url):
         user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
@@ -32,6 +35,13 @@ class BaseMangaSite:
         req = self.__identify(url)
         root_html = request.urlopen(req).read()
         return html.document_fromstring(root_html)
+
+    @staticmethod
+    def url(manga_site):
+        """
+        Finds the url based on the name of the manga provided
+        """
+        return manga_site.SITE + manga_site.PATH + manga_site.manga.replace(' ', '_').lower()
 
 class DataFrameRow:
     """
@@ -60,21 +70,12 @@ class ReadMs(BaseMangaSite):
     SITE = 'https://readms.net'
     PATH = '/manga/'
 
-    def __init__(self, manga):
-        self.manga = manga
-
-    def url(self):
-        """
-        Finds the url based on the name of the manga provided
-        """
-        return self.SITE + self.PATH + self.manga.replace(' ', '_').lower()
-
     def read(self):
-        url = self.url()
+        url = self.url(self)
         document = self.query(url)
 
         recent_releases = document\
-                .xpath('//table[contains(@class, "table table-striped")]')[0]
+            .xpath('//table[contains(@class, "table table-striped")]')[0]
 
         dfs = []
         for dlink in recent_releases.iterlinks():
@@ -84,6 +85,50 @@ class ReadMs(BaseMangaSite):
             ch_number, ch_title = element.text.split(' - ', 1)
 
             ch_link = self.SITE + rel_link
+
+            df = DataFrameRow(
+                chapter_number=ch_number,
+                chapter_title=ch_title,
+                chapter_link=ch_link,
+                manga=self.manga,
+            )
+
+            dfs.append(df)
+
+        return dfs
+
+class Manganelo(BaseMangaSite):
+    """
+    Represents mangafox
+    """
+
+    SITE = 'https://manganelo.com'
+    PATH = '/manga/'
+
+    LAST_RECENT = 4
+
+    def read(self):
+        """
+        We only get the last four, to keep in line with MangaStream
+        """
+        url = self.url(self) + '_manga'
+        document = self.query(url)
+        recent_releases = document \
+            .xpath('//div[contains(@class, "chapter-list")]')[0]
+
+        dfs = []
+        for index, dlink in enumerate(recent_releases.iterlinks()):
+            if index > self.LAST_RECENT:
+                break
+
+            element, _, ch_link, _ = dlink
+
+            # sometimes you won't find a title, manganelo doesn't do titles
+            if ":" not in element.text:
+                ch_number, ch_title = element.text, None
+            else:
+                ch_number, ch_title = element.text.split(':', 1)
+                ch_number = ch_number.replace('Chapter', '').strip()
 
             df = DataFrameRow(
                 chapter_number=ch_number,
