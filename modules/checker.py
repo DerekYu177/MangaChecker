@@ -13,24 +13,24 @@ We will update the records to reflect this change
 """
 
 import os
+import sys
+
 from .retriever import Retriever
 from .filereader import Updater
 
+sys.path.append('/Users/derekyu/Documents/workspace') # another hack to get dtp
+from dynamictableprint.dynamictableprint import DynamicTablePrint as dtp
+
 DEFAULT_READING_FILE = 'reading_list.txt'
 
-def check(args):
+def _read_reading_list(args):
     """
-    we 'check' the reading file to know
-    what the user is interested in, and provide
-    the latest chapter for their benefit.
+    if the reading list is None we default
+    else we check that the path exists
+    then we read
 
-    This is the only public method in this class
-
-    Returns: None
+    returns: dict of reading_list
     """
-    # if the reading list is None we default
-    # else we check that the path exists
-    # then we read
 
     reading_file = DEFAULT_READING_FILE if args.file is None else args.file
 
@@ -48,6 +48,21 @@ def check(args):
                 print('One of your mangas is missing a site')
                 reading_list[line] = None
 
+    return reading_list
+
+def check(args):
+    """
+    we 'check' the reading file to know
+    what the user is interested in, and provide
+    the latest chapter for their benefit.
+
+    This is the only public method in this class
+
+    Returns: None
+    """
+
+    reading_list = _read_reading_list(args)
+
     # gets us the most up to date manga
     # and the corresponding link that goes to it
     hound = Retriever(reading_list)
@@ -55,22 +70,10 @@ def check(args):
 
     # we compare the latest chapter to the records
     # and display if it is more recent
-    _display_latest_manga(updated_manga)
+    dynamic_table = dtp(updated_manga, squish_column='title')
+    dynamic_table.write_to_screen()
 
     # we update the records
     Updater(updated_manga).update()
 
     return 0
-
-def _display_latest_manga(latest_manga):
-    """
-    latest_manga should be a DataFrame
-    | Manga | Chapter Title | Chapter Number | Chapter Link (alap) | Updated |
-
-    reads the latest manga against the records
-    and displays the changes accordingly
-
-    Returns: None
-    """
-
-    return latest_manga
