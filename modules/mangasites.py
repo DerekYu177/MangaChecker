@@ -5,15 +5,18 @@ each class represents on site that we support
 Each class makes a request
 """
 
-import pandas as pd
-
 from urllib import request
 from lxml import html
+import re
+
+import pandas as pd
 
 class BaseMangaSite:
     """
     The base inheritable class of all Manga sites
     """
+
+    MOST_RECENT = 4
 
     def __init__(self, manga):
         self.manga = manga
@@ -41,14 +44,17 @@ class BaseMangaSite:
         """
         Finds the url based on the name of the manga provided
         """
-        return manga_site.SITE + manga_site.PATH + manga_site.manga.replace(' ', '_').lower()
+        site = manga_site.manga.replace(' ', '_').lower()
+        site = site.replace("!", '') # so far only Haikyuu! suffers from this
+        print(site)
+        return manga_site.SITE + manga_site.PATH + site
 
 class DataFrameRow:
     """
     Represents a universal way of collecting all the data in one place
     guarentees that the frames will not be modified
     """
-    REQUIRED = ["chapter", "title", "link", "manga"]
+    REQUIRED = ["manga", "chapter", "title", "link"]
     __slots__ = [*REQUIRED, "dataframe"]
 
     def __init__(self, chapter_number=0, chapter_title=None, chapter_link=None,
@@ -74,11 +80,18 @@ class ReadMs(BaseMangaSite):
         url = self.url(self)
         document = self.query(url)
 
-        recent_releases = document\
-            .xpath('//table[contains(@class, "table table-striped")]')[0]
+        try:
+            recent_releases = document\
+                .xpath('//table[contains(@class, "table table-striped")]')[0]
+        except IndexError: # nothing found
+            print('{} is an invalid url'.format(url))
+            return []
 
         dfs = []
-        for dlink in recent_releases.iterlinks():
+        for index, dlink in enumerate(recent_releases.iterlinks()):
+            if index > self.MOST_RECENT:
+                break
+
             element, _, rel_link, _ = dlink
 
             # get the first occurance
@@ -105,20 +118,22 @@ class Manganelo(BaseMangaSite):
     SITE = 'https://manganelo.com'
     PATH = '/manga/'
 
-    LAST_RECENT = 4
-
     def read(self):
         """
         We only get the last four, to keep in line with MangaStream
         """
         url = self.url(self) + '_manga'
         document = self.query(url)
-        recent_releases = document \
-            .xpath('//div[contains(@class, "chapter-list")]')[0]
+
+        try:
+            recent_releases = document \
+                .xpath('//div[contains(@class, "chapter-list")]')[0]
+        except IndexError:
+            return []
 
         dfs = []
         for index, dlink in enumerate(recent_releases.iterlinks()):
-            if index > self.LAST_RECENT:
+            if index > self.MOST_RECENT:
                 break
 
             element, _, ch_link, _ = dlink
