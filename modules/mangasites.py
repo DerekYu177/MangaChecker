@@ -18,6 +18,10 @@ class BaseMangaSite:
 
     MOST_RECENT = 4
 
+    SITE = ''
+    PATH = ''
+    APPEND = ''
+
     def __init__(self, manga):
         self.manga = manga
 
@@ -39,15 +43,23 @@ class BaseMangaSite:
         root_html = request.urlopen(req).read()
         return html.document_fromstring(root_html)
 
-    @staticmethod
-    def url(manga_site):
+    def url(self, manga_site):
         """
         Finds the url based on the name of the manga provided
         """
         site = manga_site.manga.replace(' ', '_').lower()
         site = site.replace("!", '') # so far only Haikyuu! suffers from this
-        print(site)
-        return manga_site.SITE + manga_site.PATH + site
+        full_link_to_site =     \
+            manga_site.SITE   \
+            + manga_site.PATH \
+            + site              \
+            + manga_site.APPEND
+
+        print('looking for {} at {}'.format(site, full_link_to_site))
+        return full_link_to_site
+
+    def read(self):
+        raise NotImplementedError
 
 class DataFrameRow:
     """
@@ -65,8 +77,15 @@ class DataFrameRow:
         self.manga = manga
 
         chapter_links = dict((c_name, [getattr(self, c_name)]) for c_name in
-                            self.REQUIRED)
+                             self.REQUIRED)
         self.dataframe = pd.DataFrame(chapter_links, columns=self.REQUIRED)
+
+    @staticmethod
+    def empty_manga_list():
+        """
+        Returns an empty dataframe with the columns initialized
+        """
+        return pd.DataFrame(columns=DataFrameRow.REQUIRED)
 
 class ReadMs(BaseMangaSite):
     """
@@ -77,6 +96,9 @@ class ReadMs(BaseMangaSite):
     PATH = '/manga/'
 
     def read(self):
+        """
+        override the base class method
+        """
         url = self.url(self)
         document = self.query(url)
 
@@ -112,17 +134,18 @@ class ReadMs(BaseMangaSite):
 
 class Manganelo(BaseMangaSite):
     """
-    Represents mangafox
+    Represents manganelo
     """
 
     SITE = 'https://manganelo.com'
     PATH = '/manga/'
+    APPEND = '_manga'
 
     def read(self):
         """
-        We only get the last four, to keep in line with MangaStream
+        override the base class method
         """
-        url = self.url(self) + '_manga'
+        url = self.url(self)
         document = self.query(url)
 
         try:

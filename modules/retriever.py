@@ -18,10 +18,6 @@ def _retrieve(manga, site):
 
     manga_klass = SUPPORTED_SITES[site]
 
-    # TODO: we should be finding only the most recent
-    # chapter to show, unless we keep track of which chapter the user is
-    # currently on...
-
     return manga_klass(manga).read()
 
 class Retriever(object):
